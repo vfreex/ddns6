@@ -1,0 +1,7 @@
+#[target.mips-unknown-linux-musl]
+##linker = "mips-openwrt-linux-gcc"
+#rustflags = [
+#    #"-C", "prefer-dynamic",
+#    "-C", "target-feature=-crt-static",
+#    "-C", "link-args=-lgcc",
+#]
