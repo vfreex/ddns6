@@ -4,19 +4,20 @@ version = "0.1.0"
 authors = ["Yuxiang Zhu <vfreex@gmail.com>"]
 edition = "2018"
 
+
 [profile.release]
 # https://github.com/johnthagen/min-sized-rust
+panic = 'abort'
 opt-level = 'z'  # Optimize for size.
 lto = true # Enable Link Time Optimization (LTO)
-panic = 'abort'
 codegen-units = 1
+incremental = false
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = "^0.2.0-alpha.6"
-hyper = "^0.13.0-alpha.4"
+tokio = { version = "^0.2.0-alpha.6", default-features = false, features = ["rt-full"] }
+hyper = { version = "^0.13.0-alpha.4", default-features = false }
 hyper-tls = "^0.4.0-alpha.4"
-#futures = "^0.3.1"
-#reqwest = "^0.10.0-alpha.1"
-#openssl = { version = "0.10", features = ["vendored"] }
+toml = "^0.5"
