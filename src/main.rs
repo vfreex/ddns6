@@ -1,40 +1,55 @@
-use std::io::{self, Write, Read};
-use hyper_tls::HttpsConnector;
-use hyper::Client;
 use std::error::Error;
-use std::net::TcpStream;
-use toml::Value;
-use tokio::runtime::current_thread::Runtime;
+use std::fs;
+use std::net::IpAddr;
 
-async fn test_https(url: &str) {
-    let https = HttpsConnector::new().unwrap();
-    let client = Client::builder().build::<_, hyper::Body>(https);
+use futures::FutureExt;
+use futures::future::{BoxFuture, join_all};
+use tokio::runtime;
+use toml;
 
-    let res = client.get(url.parse().unwrap()).await.unwrap();
-    let mut body = res.into_body();
-    while let Some(next) = body.next().await {
-        let chunk = next.unwrap();
-        io::stdout().write_all(&chunk).unwrap();
+use ddns6::config::Config;
+use ddns6::credential::Credential;
+use ddns6::provider::he_net::HeNetProvider;
+use ddns6::provider::provider::Provider;
+
+type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
+
+async fn ddns6_main<'a>() -> Result<()> {
+    let he = HeNetProvider::new();
+    let config_content = fs::read_to_string("./config/ddns6.toml")?;
+    let config: Config = toml::from_str(&config_content)?;
+
+    let mut futs = Vec::new();
+    for entry in config.entries.iter() {
+        let cred = Credential { username: entry.username.to_owned(), password: entry.password.to_owned() };
+        let ipv4_fut: BoxFuture<Result<IpAddr>> = entry.ipv4.as_ref().unwrap().get_ip_address();
+        let ipv6_fut: BoxFuture<Result<IpAddr>> = entry.ipv6.as_ref().unwrap().get_ip_address();
+        let fut_fn = |ip_fut: BoxFuture<'a, Result<IpAddr>>| {
+            let entry = entry.clone();
+            let he = &he;
+            let cred = cred.clone();
+            async move {
+                let ip_addr = ip_fut.await?;
+                he.update(&entry.hostname, ip_addr, cred.clone()).await
+            }.boxed()
+        };
+        futs.push(fut_fn(ipv4_fut));
+        futs.push(fut_fn(ipv6_fut));
     }
-    let mut tcp = TcpStream::connect("www.baidu.com:80").unwrap();
-    tcp.write("GET / HTTP/1.0\r\n\r\n".as_bytes());
-
-    let mut resp = String::new();
-    tcp.read_to_string(&mut resp);
-    println!("{}\n", resp.as_str());
+    for r in join_all(futs).await {
+        if let Err(err) = r {
+            eprintln!("Update failed: {}", err);
+        }
+    }
+    Ok(())
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // Create the runtime
-    //let rt = Runtime::new()?;
-    let mut rt = Runtime::new()?;
-    // Spawn the root task
-    rt.block_on(test_https("https://hyper.rs"));
-    //test_https("");
-
-    let value = "foo = 'bar'".parse::<Value>().unwrap();
-
-    //assert_eq!(value["foo"].as_str(), Some("bar"));
-    panic!("Oops!");
+fn main() -> Result<()> {
+    let mut rt = runtime::Builder::new()
+        .basic_scheduler()
+        .enable_time()
+        .enable_io()
+        .build()?;
+    rt.block_on(ddns6_main())?;
     Ok(())
 }
