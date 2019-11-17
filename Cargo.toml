@@ -20,4 +20,5 @@ incremental = false
 tokio = { version = "^0.2.0-alpha.6", default-features = false, features = ["rt-full"] }
 hyper = { version = "^0.13.0-alpha.4", default-features = false }
 hyper-tls = "^0.4.0-alpha.4"
+native-tls = { version = "^0.2" }
 toml = "^0.5"

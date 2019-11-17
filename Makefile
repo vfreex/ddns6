@@ -1,3 +1,13 @@
+# NOTE for Cross compilation:
+# 1. If compiling for musl fails with missing libunwind, consider to remove it
+#   from /.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/src/libunwind/build.rs.
+# 2. Define following environment variables for OpenSSL:
+#   - OPENSSL_DIR=/path/to/openssl/dir
+#   - OPENSSL_STATIC=yes if static linking is needed.
+# 3. Add additional Lib search path to RUSTFLAGS:
+#   -L native=/path/to/native/lib
+
+
 CARGO := cargo
 XARGO := xargo
 USE_XARGO := 0
@@ -15,7 +25,7 @@ endif
 
 export STRIP := strip
 
-#NOTE: Consider to add `-C panic=abort` to RUSTFLAGS if the missing panic-unwind issue occurs with xargo.
+# NOTE: Consider to add `-C panic=abort` to RUSTFLAGS if the missing panic-unwind issue occurs with xargo.
 ifeq ($(STATIC), 0)
 export RUSTFLAGS=-C linker=$(CC) -C target-feature=-crt-static
 else
@@ -28,13 +38,17 @@ build:
 	@echo CC=\"$(CC)\" RUSTFLAGS=\"$(RUSTFLAGS)\"
 ifeq ($(USE_XARGO), 0)
 	$(CARGO) $(CARGOFLAGS) build $(CARGO_BUILD_FLAGS)
-else
-	$(XARGO) $(CARGOFLAGS) build --target=$(BUILD_TUPLE) $(CARGO_BUILD_FLAGS)
-endif
 ifeq ($(DEBUG), 0)
 	$(STRIP) target/release/ddns6
 endif
 	@echo Built target/$(BUILD_TYPE)/ddns6
+else
+	$(XARGO) $(CARGOFLAGS) build --target=$(BUILD_TUPLE) $(CARGO_BUILD_FLAGS)
+ifeq ($(DEBUG), 0)
+	$(STRIP) target/$(BUILD_TUPLE)/release/ddns6
+endif
+	@echo Built target/$(BUILD_TUPLE)/release/ddns6
+endif
 
 cross/%: TARGET=$*
 cross/%: CHOST=$*
