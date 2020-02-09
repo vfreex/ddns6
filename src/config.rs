@@ -17,7 +17,9 @@ use crate::types::Result;
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct Config {
+    #[serde(default)]
     pub version: String,
+    #[serde(default)]
     pub log_level: String,
     pub entries: Vec<DdnsEntry>,
 }
@@ -54,7 +56,7 @@ impl IPAddressConf {
                 IPAddressConf::Static(address) => {
                     match address {
                         IpAddr::V4(_) => Ok(address.clone()),
-                        _ => Err(Box::new(AddressDeterminationError) as Box<dyn Error + Sync + Send>),
+                        _ => Err(Box::new(AddressDeterminationError(format!("Invalid IPv4 address: {}", address).to_owned())) as Box<dyn Error + Sync + Send>),
                     }
                 }
                 IPAddressConf::AddressWithNetmask { addr, mask } => {
@@ -119,7 +121,7 @@ impl IPAddressConf {
                 IPAddressConf::Static(address) => {
                     match address {
                         IpAddr::V6(_) => Ok(address.clone()),
-                        _ => Err(Box::new(AddressDeterminationError) as Box<dyn Error + Sync + Send>),
+                        _ => Err(Box::new(AddressDeterminationError(format!("Invalid IPv6 address: {}", address).to_owned())) as Box<dyn Error + Sync + Send>),
                     }
                 }
                 IPAddressConf::AddressWithNetmask { addr, mask } => {

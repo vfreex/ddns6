@@ -74,11 +74,18 @@ impl<'a> std::iter::Iterator for InterfaceAddressIterator<'a> {
             let valid = match addr {
                 IpAddr::V4(ipv4) => match ipv4.octets() {
                     [0, _, _, _ ] => false,
+                    [10, _, _, _ ] => false,
+                    [100, 64..=127, _, _ ] => false,
+                    [127, _, _, _ ] => false,
+                    [172, 16..=31, _, _ ] => false,
                     [169, 254, _, _ ] => false,
+                    [192, 168, _, _ ] => false,
                     _ => true
                 }
                 IpAddr::V6(ipv6) => match ipv6.segments() {
+                    [0x0000..=0x1fff, _, _, _, _, _, _, _ ] => false,
                     [0xfe80, _, _, _, _, _, _, _ ] => false,
+                    [0xfc00..=0xfdff, _, _, _, _, _, _, _ ] => false,
                     _ => true
                 }
             };
@@ -98,7 +105,7 @@ async fn get_ip_addr_output(dev: &str) -> Result<String> {
         .output();
     let output = output.await?;
     if !output.status.success() {
-        return Err(Box::new(AddressDeterminationError))
+        return Err(Box::new(AddressDeterminationError("Failed to run `ip addr` command. Is iproute2 installed?".to_owned())))
     }
     Ok(String::from_utf8(output.stdout)?)
 }
@@ -115,7 +122,7 @@ impl Ipv4AddrSource for InterfaceSource {
             };
             return Ok(addr);
         }
-        Err(Box::new(AddressDeterminationError))
+        Err(Box::new(AddressDeterminationError(format!("No viable IPv4 addresses configured on interface {}", self.dev).to_owned())))
     }
 }
 
@@ -131,6 +138,6 @@ impl Ipv6AddrSource for InterfaceSource {
             };
             return Ok(addr);
         }
-        Err(Box::new(AddressDeterminationError))
+        Err(Box::new(AddressDeterminationError(format!("No viable IPv6 addresses configured on interface {}", self.dev).to_owned())))
     }
 }

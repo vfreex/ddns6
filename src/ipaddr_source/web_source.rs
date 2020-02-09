@@ -55,7 +55,10 @@ impl Ipv6AddrSource for WebSource {
             let addrs_iter = (domain_name.to_string() + ":0").to_socket_addrs().unwrap();
             let resolved_ips: Vec<IpAddr> = addrs_iter.filter(|addr| addr.is_ipv6())
                 .map(|ref addr| addr.ip()).collect();
-            Ok::<_, Infallible>(resolved_ips.into_iter())
+            if resolved_ips.is_empty() {
+                return Err(format!("Failed to resolve AAAA record for {}", &domain_name));
+            }
+            Ok::<_, String>(resolved_ips.into_iter())
         });
         let http = HttpConnector::new_with_resolver(resolver);
         let tls = native_tls::TlsConnector::new()?;

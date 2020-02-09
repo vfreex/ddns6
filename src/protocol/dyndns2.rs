@@ -31,8 +31,6 @@ impl DynDns2 {
 impl Protocol for DynDns2 {
     async fn update(&self, domain_name: &str, ip_addr: &IpAddr, cred: &Credential) -> Result<()> {
         let url: Uri = format!("{}/nic/update?hostname={}&myip={}", &self.server_url, domain_name, ip_addr).parse()?;
-        //eprintln!("https://{}:{}@{}/nic/update?hostname={}&myip={}", &cred.username, &cred.password, url.authority_part().unwrap().as_str(), domain_name, ip_addr);
-        //dbg!(&url);
         let auth_header_val = "Basic ".to_owned() + &encode(&format!("{}:{}", &cred.username, &cred.password));
         let req = Request::get(url.to_string()).header(AUTHORIZATION, &auth_header_val).body(Body::empty())?;
         let res = self.client.request(req).await?;
