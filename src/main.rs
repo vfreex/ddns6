@@ -22,14 +22,15 @@ async fn ddns6_main<'a>() -> Result<()> {
     let mut futs = Vec::new();
     for entry in config.entries.iter() {
         let cred = Credential { username: entry.username.to_owned(), password: entry.password.to_owned() };
-        let ipv4_fut: BoxFuture<Result<IpAddr>> = entry.ipv4.as_ref().unwrap().get_ip_address();
-        let ipv6_fut: BoxFuture<Result<IpAddr>> = entry.ipv6.as_ref().unwrap().get_ip_address();
+        let ipv4_fut: BoxFuture<Result<IpAddr>> = entry.ipv4.as_ref().unwrap().get_ipv4_address();
+        let ipv6_fut: BoxFuture<Result<IpAddr>> = entry.ipv6.as_ref().unwrap().get_ipv6_address();
         let fut_fn = |ip_fut: BoxFuture<'a, Result<IpAddr>>| {
             let entry = entry.clone();
             let he = &he;
             let cred = cred.clone();
             async move {
                 let ip_addr = ip_fut.await?;
+                eprintln!("Updating {} -> {}", entry.hostname.as_str(), &ip_addr);
                 he.update(&entry.hostname, ip_addr, cred.clone()).await
             }.boxed()
         };

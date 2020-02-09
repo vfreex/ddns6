@@ -1,9 +1,13 @@
-use std::net::{IpAddr, Ipv4Addr};
-use std::process::Command;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use tokio::process::Command;
 use std::str::{FromStr, Lines};
 
 use serde::Deserialize;
 
+use async_trait::async_trait;
+
+use crate::ipaddr_source::{Ipv4AddrSource, Ipv6AddrSource};
+use crate::ipaddr_source::error::AddressDeterminationError;
 use crate::types::Result;
 
 #[derive(Deserialize)]
@@ -11,7 +15,6 @@ use crate::types::Result;
 #[derive(Clone)]
 pub struct InterfaceSource {
     pub dev: String,
-    pub v: i32,
 }
 
 struct InterfaceAddressIterator<'a> {
@@ -89,19 +92,45 @@ impl<'a> std::iter::Iterator for InterfaceAddressIterator<'a> {
     }
 }
 
-impl InterfaceSource {
-    pub fn get_ip_address(&self) -> Result<IpAddr> {
-        let output = Command::new("ip")
-            .arg("addr").arg("show").arg("dev").arg(&self.dev)
-            .output().unwrap();
-        if !output.status.success() {
-            panic!("Error running ip addr, exited with {}", output.status)
-        }
-        let stdout = String::from_utf8(output.stdout).unwrap();
-        let iter = InterfaceAddressIterator::new(self.v, &stdout);
+async fn get_ip_addr_output(dev: &str) -> Result<String> {
+    let output = Command::new("ip")
+        .arg("addr").arg("show").arg("dev").arg(dev)
+        .output();
+    let output = output.await?;
+    if !output.status.success() {
+        return Err(Box::new(AddressDeterminationError))
+    }
+    Ok(String::from_utf8(output.stdout)?)
+}
+
+#[async_trait]
+impl Ipv4AddrSource for InterfaceSource {
+    async fn get_ipv4_address(&self) -> Result<Ipv4Addr> {
+        let stdout = get_ip_addr_output(self.dev.as_str()).await?;
+        let iter = InterfaceAddressIterator::new(4, stdout.as_str());
         for addr in iter {
+            let addr = match addr {
+                IpAddr::V4(ipv4) => ipv4,
+                _ => panic!()
+            };
             return Ok(addr);
         }
-        Ok(IpAddr::V4(Ipv4Addr::UNSPECIFIED))
+        Err(Box::new(AddressDeterminationError))
+    }
+}
+
+#[async_trait]
+impl Ipv6AddrSource for InterfaceSource {
+    async fn get_ipv6_address(&self) -> Result<Ipv6Addr> {
+        let stdout = get_ip_addr_output(self.dev.as_str()).await?;
+        let iter = InterfaceAddressIterator::new(6, stdout.as_str());
+        for addr in iter {
+            let addr = match addr {
+                IpAddr::V6(ipv6) => ipv6,
+                _ => panic!()
+            };
+            return Ok(addr);
+        }
+        Err(Box::new(AddressDeterminationError))
     }
 }
