@@ -1,0 +1,21 @@
+[package]
+name = "test-rust"
+version = "0.1.0"
+authors = ["Yuxiang Zhu <vfreex@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.dev]
+panic = 'abort'
+
+[profile.release]
+# https://github.com/johnthagen/min-sized-rust
+opt-level = 'z'  # Optimize for size.
+lto = true # Enable Link Time Optimization (LTO)
+panic = 'abort'
+codegen-units = 1
+
+[dependencies.compiler_builtins]
+path = "../compiler-builtins"
+features=["c"]
