@@ -5,8 +5,17 @@ MUSL_DIR=$PWD/../musl
 export PATH=$LLVM_ROOT/bin:$PATH
 
 pushd $MUSL_DIR
-export CC=clang CFLAGS="--target=mips-linux-musl -msoft-float" LDFLAGS="-fuse-ld=lld" AR=llvm-ar RANLIB=llvm-ranlib
-./configure --host=mips-linux-musl
+# TARGET=mips-unknown-linux-musl
+# export CC=clang CFLAGS="-fPIC --target=mips-linux-musl -march=mips32r2 -mtune=24kc -msoft-float" LDFLAGS="-fuse-ld=lld" AR=llvm-ar RANLIB=llvm-ranlib
+
+TARGET=mips64-unknown-linux-muslabi64
+export CC=clang CFLAGS="-fPIC -mabicalls --target=mips64-unknown-linux-muslabi64 -mdouble-float" LDFLAGS="-fuse-ld=lld" AR=llvm-ar RANLIB=llvm-ranlib
+
+#TARGET=armv7-unknown-linux-muslabi64
+#export CC=clang CFLAGS="-fPIC --target=armv7-unknown-linux-musleabihf" LDFLAGS="-fuse-ld=lld" AR=llvm-ar RANLIB=llvm-ranlib
+
+./configure --host=$TARGET
 make clean
 make
-make install DEST_DIR=/opt/cross/mips-unknown-linux-musl
+sudo make install DESTDIR=/opt/cross/$TARGET
+sudo ln -sf libc.a /opt/cross/$TARGET/usr/local/musl/lib/libunwind.a
