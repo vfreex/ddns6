@@ -1,4 +1,4 @@
-extern crate compiler_builtins;
+//extern crate compiler_builtins;
 
 fn main() {
     println!("Hello, world!");
