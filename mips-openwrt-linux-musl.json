@@ -1,0 +1,52 @@
+{
+  "arch": "mips",
+  "cpu": "mips32r2",
+  "crt-static-respected": true,
+  "data-layout": "E-m:m-p:32:32-i8:8:32-i16:16:32-i64:64-n32-S64",
+  "dynamic-linking": true,
+  "env": "musl",
+  "executables": true,
+  "features": "+mips32r2,+soft-float",
+  "has-elf-tls": true,
+  "has-rpath": true,
+  "is-builtin": false,
+  "linker-flavor": "gcc",
+  "linker-is-gnu": true,
+  "llvm-target": "mips-unknown-linux-musl",
+  "max-atomic-width": 32,
+  "os": "linux",
+  "position-independent-executables": true,
+  "post-link-objects-crt": [
+    "crtn.o"
+  ],
+  "post-link-objects": [
+    "crtn.o"
+  ],
+  "pre-link-args": {
+    "gcc": [
+      "-Wl,--as-needed",
+      "-Wl,-z,noexecstack",
+      "-Wl,--eh-frame-hdr"
+    ]
+  },
+  "pre-link-args-crt": {
+    "gcc": [
+      "-nostdlib"
+    ]
+  },
+  "pre-link-objects-exe-crt": [
+    "crt1.o",
+    "crti.o"
+  ],
+  "pre-link-objects-exe": [
+    "crt1.o",
+    "crti.o"
+  ],
+  "relro-level": "full",
+  "target-c-int-width": "32",
+  "target-endian": "big",
+  "target-family": "unix",
+  "target-mcount": "_mcount",
+  "target-pointer-width": "32",
+  "vendor": "openwrt"
+}
