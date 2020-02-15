@@ -20,4 +20,5 @@ export CC=clang CFLAGS="-fPIC --target=mips-linux-musl -march=mips32r2 -mtune=24
 #make clean
 make
 sudo make install DESTDIR=/opt/cross/$TARGET
-# sudo ln -sf libc.a /opt/cross/$TARGET/usr/local/musl/lib/libunwind.a
+# hack libunwind.a which is not used by this project
+sudo ln -sf libc.a /opt/cross/$TARGET/usr/local/musl/lib/libunwind.a
