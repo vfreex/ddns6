@@ -15,18 +15,15 @@
   "llvm-target": "mips-unknown-linux-musl",
   "max-atomic-width": 32,
   "os": "linux",
-  "position-independent-executables": true,
+  "position-independent-executables": false,
   "post-link-objects-crt": [
-    "crtn.o"
-  ],
-  "post-link-objects": [
-    "crtn.o"
   ],
   "pre-link-args": {
     "gcc": [
       "-Wl,--as-needed",
       "-Wl,-z,noexecstack",
-      "-Wl,--eh-frame-hdr"
+      "-Wl,--eh-frame-hdr",
+      "-nostdlib"
     ]
   },
   "pre-link-args-crt": {
@@ -36,11 +33,13 @@
   },
   "pre-link-objects-exe-crt": [
     "crt1.o",
-    "crti.o"
+    "crti.o",
+    "crtn.o"
   ],
   "pre-link-objects-exe": [
-    "crt1.o",
-    "crti.o"
+    "Scrt1.o",
+    "crti.o",
+    "crtn.o"
   ],
   "relro-level": "full",
   "target-c-int-width": "32",
