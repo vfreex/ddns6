@@ -1,0 +1,27 @@
+env:
+  global: []
+  jobs:
+  - TARGET=x86_64-unknown-linux-gnu
+  - TARGET=x86_64-unknown-linux-musl
+language: rust
+rust:
+- stable
+cache: cargo
+#services:
+#- docker
+#before_install:
+#- docker pull docker.io/debian:buster
+script:
+- sudo apt-get install -y --no-install-recommends binutils gcc make cmake pkg-config musl-tools libssl-dev
+- rustup target add "$TARGET"
+- cargo build --target="$TARGET" --release
+- mkdir -p staging
+- cp target/"$TARGET"/release/ddns6 staging/ddns6-"$TARGET"
+- strip staging/ddns6-"$TARGET"
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file_glob: true
+  file: staging/ddns6-*
+  skip_cleanup: true
+  draft: true
